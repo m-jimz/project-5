@@ -1,120 +1,147 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [cat, setCat] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [banList, setBanList] = useState(new Set())
+
+  const API_KEY = 'live_KP5NEfBkUe0K4S2ihUPPtzVOFsgVqeHPi150CSrayfU9W6tr7v5E7NCZ7PpxnUWx'
+
+  const toggleBan = (value) => {
+    const newBanList = new Set(banList)
+    if (newBanList.has(value)) {
+      newBanList.delete(value)
+    } else {
+      newBanList.add(value)
+    }
+    setBanList(newBanList)
+  }
+
+  const isCatBanned = (catData) => {
+    if (!catData.breeds || catData.breeds.length === 0) return false
+    const breed = catData.breeds[0]
+    
+    return (
+      banList.has(breed.temperament) ||
+      banList.has(breed.origin) ||
+      banList.has(breed.intelligence)
+    )
+  }
+
+  const fetchCat = async () => {
+    setLoading(true)
+    setError(null)
+    let foundCat = null
+    let attempts = 0
+    const maxAttempts = 20
+
+    try {
+      while (attempts < maxAttempts && !foundCat) {
+        const response = await fetch(
+          'https://api.thecatapi.com/v1/images/search?has_breeds=1',
+          {
+            headers: {
+              'x-api-key': API_KEY,
+            },
+          }
+        )
+        if (!response.ok) {
+          throw new Error('Failed to fetch cat data')
+        }
+        const data = await response.json()
+        if (data.length > 0) {
+          if (!isCatBanned(data[0])) {
+            foundCat = data[0]
+          }
+        }
+        attempts++
+      }
+
+      if (foundCat) {
+        setCat(foundCat)
+      } else {
+        setError('No cats available! Try removing some bans.')
+      }
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className="app-container">
+      <h1>🐱 Cat Discover</h1>
+      
+      <button 
+        onClick={fetchCat} 
+        disabled={loading}
+        className="fetch-btn"
+      >
+        {loading ? 'Loading...' : 'Discover a Cat'}
+      </button>
 
-      <div className="ticks"></div>
+      {error && <p className="error">{error}</p>}
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+      {cat && cat.breeds && cat.breeds.length > 0 && (
+        <div className="cat-card">
+          <img src={cat.url} alt="Random cat" className="cat-image" />
+          <h2>{cat.breeds[0].name}</h2>
+          <div className="attributes">
+            <p>
+              <strong>Temperament:</strong> 
+              <span 
+                className={`attr-value ${banList.has(cat.breeds[0].temperament) ? 'banned' : ''}`}
+                onClick={() => toggleBan(cat.breeds[0].temperament)}
+                title="Click to ban"
+              >
+                {cat.breeds[0].temperament}
+              </span>
+            </p>
+            <p>
+              <strong>Origin:</strong> 
+              <span 
+                className={`attr-value ${banList.has(cat.breeds[0].origin) ? 'banned' : ''}`}
+                onClick={() => toggleBan(cat.breeds[0].origin)}
+                title="Click to ban"
+              >
+                {cat.breeds[0].origin}
+              </span>
+            </p>
+            <p>
+              <strong>Intelligence:</strong> 
+              <span 
+                className={`attr-value ${banList.has(cat.breeds[0].intelligence) ? 'banned' : ''}`}
+                onClick={() => toggleBan(cat.breeds[0].intelligence)}
+                title="Click to ban"
+              >
+                {cat.breeds[0].intelligence || 'N/A'}
+              </span>
+            </p>
+          </div>
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+      )}
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+      {banList.size > 0 && (
+        <div className="ban-list-display">
+          <h3>Banned Attributes ({banList.size})</h3>
+          <div className="ban-tags">
+            {Array.from(banList).map((value) => (
+              <span 
+                key={value} 
+                className="ban-tag"
+                onClick={() => toggleBan(value)}
+                title="Click to remove ban"
+              >
+                {value} ✕
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 
