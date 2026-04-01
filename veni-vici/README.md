@@ -1,10 +1,10 @@
-# Web Development Project 4 - *Name of App Here*
+# Web Development Project 4 - *Car Discover*
 
-Submitted by: **Your Name Here**
+Submitted by: **Marco Jimenez**
 
-This web app: **insert description**
+This web app: **Help browering cats with preference**
 
-Time spent: **X** hours spent in total
+Time spent: **12** hours spent in total
 
 ## Required Features
 
